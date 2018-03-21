@@ -1,31 +1,30 @@
 \documentclass[10pt]{beamer}
 
 \usetheme{metropolis}
+\usepackage{appendixnumberbeamer}
 
 \usepackage{listings}
 \usepackage{amssymb, amsmath}
 \usepackage{tikz, tikz-cd}
 \usepackage{adjustbox}
 \usepackage{graphicx}
+\graphicspath{ {images/} }
 
 \newcommand{\hrsmall}{\noindent\makebox[\linewidth]{\rule{.3\paperwidth}{0.4pt}} \\}
 \newcommand{\hr}{\noindent\makebox[\linewidth]{\rule{.7\paperwidth}{0.4pt}} \\}
 
 \title{Differentiating Data Structures}
-% \date{\today}
-\date{}
+\date{\today}
 \author{Mitch Stevens}
 % \titlegraphic{\hfill\includegraphics[height=1.5cm]{logo.pdf}}
-
 \begin{document}
- 
-\frame{\titlepage}
 
-\begin{frame}[fragile] 
-    \frametitle{What is an Algebra?}
-    \begin{columns}[c] % the "c" option specifies center vertical alignment
-    \column{.5\textwidth} % column designated by a command
-	An \textbf{algebra} is a pair of monoids over some type. \\
+\maketitle
+
+\begin{frame}[fragile]{What is an Algebra}
+	\begin{columns}[T,onlytextwidth]
+    \column{0.5\textwidth}
+ 	An \textbf{algebra} is a pair of monoids over some type. \\
     
     Examples of Algebras include: \\
     \begin{itemize}
@@ -40,8 +39,8 @@
         \item Image Composition
     \end{itemize}
 
-    \column{.5\textwidth}
-    \begin{lstlisting}[language=Haskell]
+    \column{0.5\textwidth}
+	\begin{lstlisting}[language=Haskell]
 class Alg a where
   zero :: a
   one :: a
@@ -54,12 +53,11 @@ class Alg a where
         \item $(a+b)*c = (a*c)+(a*c)$
     \end{itemize}
 
-    \end{columns}
+	\end{columns}
 \end{frame}
 
 
-\begin{frame}[fragile]
-    \frametitle{Types form an Algebra}
+\begin{frame}[fragile]{Types form an Algebra}
     \begin{columns} % the "c" option specifiesdesignated by a command
     \column{.5\textwidth} % column maller types in two fundamental ways:
     A \textbf{sum type} takes a value from $A$ \textbf{or} from $B$
@@ -92,12 +90,38 @@ instance Algebra Type where
 
     \end{columns}
 \end{frame}
- 
 
-\begin{frame}[fragile]
-    \frametitle{Type Isomorphism}
+
+\begin{frame}[fragile]{Traffic light example}
     \begin{columns} % the "c" option specifies center vertical alignment
     \column{.5\textwidth} % column designated by a command
+    \begin{itemize}
+        \item How many values inhabit \texttt{Traffic}?
+        \item How many values inhabit \texttt{Intersection}?
+        \item How many values inhabit \texttt{ComplexInter}?
+    \end{itemize}
+
+    \column{.5\textwidth}
+    \begin{lstlisting}[language=Haskell]
+data Traffic = R | Y | G
+
+data Intersection = Inter
+    { north :: Traffic
+    , east  :: Traffic
+    , south :: Traffic
+    , west  :: Traffic
+    }
+        
+type ComplexInter lane =
+    lane -> Traffic
+    \end{lstlisting}
+    \end{columns}
+\end{frame}
+
+
+\begin{frame}[fragile]{Type Isomorphism}
+    \begin{columns}
+    \column{.5\textwidth}
     There is a difference between the set of Types and the equivalence class of types ($\mathbb{T}$)
     \hrsmall
     The size of a type is the number of values that can inhabit it. Lets call this size computing funtion
@@ -116,31 +140,6 @@ instance Algebra Type where
     }
 
     \end{columns}
-\end{frame}
-
-
-\begin{frame}[fragile]
-    \frametitle{Calculating the size of a Type}
-    \centering
-
-    We can calculate $\sigma$ in a mechanical way using these rules:
-    \begin{itemize}
-        \item $\sigma(\text{Sum a b}) = \sigma(a) + \sigma(b)$
-        \item $\sigma(\text{Prod a, b}) = \sigma(a) \times \sigma(b)$
-        \item $\sigma(a \rightarrow b) \equiv \prod_{n=1}^{\sigma(a)} b  = \sigma(b)^{\sigma(a)}$
-    \end{itemize}
-
-    \hr
-
-    \centering
-    \begin{tabular}{ ccc }
-        Name & Constructor/Type & Size \\
-        Identity a & Identity a & \sigma(a) \\
-        Maybe a & \texttt{Nothing | Just a} & 1 + \sigma(a) \\
-        Either a b & \texttt{Left a | Right b} & \sigma(a) + \sigma(b) \\
-        (a, b) & \texttt{Tuple a b} & \sigma(a) \times \sigma(b)
-    \end{tabular}
-    
 \end{frame}
 
 
@@ -172,8 +171,7 @@ type ComplexInter lane =
 \end{frame}
 
 
-\begin{frame}[fragile]
-    \frametitle{How many values inhabit List?}
+\begin{frame}[fragile]{How many values inhabit List?}
     \begin{center}
         \begin{tabular}{ ccc }
             \sigma(\texttt{List a}) &=& \sigma(\texttt{Nil | Cons a (List a}) \\
@@ -194,8 +192,7 @@ type ComplexInter lane =
 \end{frame}
 
 
-\begin{frame}[fragile]
-    \frametitle{Refactoring}
+\begin{frame}[fragile]{Refactoring}
     Give that $\sigma$ is a isomorphism, we know that $id_\mathbb{T} = \sigma \circ id_\mathbb{N} \circ \sigma^{-1}$. \par
     
     \begin{center}
@@ -213,26 +210,36 @@ type ComplexInter lane =
 \end{frame}
 
 
-\begin{frame}[fragile]
-    \frametitle{One-Hole Contexts and Zippers}
+\begin{frame}[fragile]{One-Hole Contexts and Zippers}
     \centering
     A 'One-hole Context' is a data structure with a 'hole' where a value can be inserted. \\
-    \includegraphics[height=100px]{one-hole_context.png} \\
+    \includegraphics[scale=0.3]{one-hole_context.png} \\
     If you include a value, you can use a one-hole context to recreate the original data-structure. The product of a value and a one-hole context is called a zipper.
 \end{frame}
 
 
-\begin{frame}[fragile]
-    \frametitle{Rules of Differentiation}
-    \begin{columns} % the "c" option specifies center vertical alignment
-    \column{.5\textwidth} % column designated by a command
+\begin{frame}{Zipper of a List}
+	The List Zipper is defined \texttt{type ListZipper a = ([a], a, [a])}. It provides fast modification of adjacent elements in a list.
+
+	\centering
+	\begin{tabular}{ r r c l l }
+ 		(& [a_0, \dots, a_{i-2}],	& \alert{a_{i-1}} 	& ,[a_i, \dots, a_n] &) \\ 
+ 		(& [a_0, \dots, a_{i-1}],	& \alert{a_i} 		& ,[a_{i+1}, \dots, a_n] &) \\  
+		(& [a_0, \dots, a_i], 		& \alert{a_{i+1}} 	& ,[a_{i+2}, \dots, a_n] &)    
+	\end{tabular}
+\end{frame}
+
+
+\begin{frame}[fragile]{Rules of Differentiation}
+    \begin{columns}
+    \column{.5\textwidth}
     Usually only differentiation is only defined over functions $ \mathbb{R}^m \rightarrow \mathbb{R}^n $. But the rules that come from differential calculus can be applied to any algebra. \\
     This is not usually meaningful, however.
     
 
     \column{.5\textwidth}
     Sum Rule:
-    $$ \partial_x (A+B) = \partial_x A \partial_x B $$ \\
+    $$ \partial_x (A+B) = \partial_x A +  \partial_x B $$ \\
     
     Product Rule:
     $$ \partial_x (A \times B) = \partial_x A \times B + A \times \partial_x B $$ \\
@@ -242,6 +249,7 @@ type ComplexInter lane =
 
     \end{columns}
 \end{frame}
+
 
 \begin{frame}[fragile]
     \frametitle{Differentiating Types}
@@ -265,10 +273,10 @@ type ComplexInter lane =
 \end{frame}
 
 
-\begin{frame}[fragile]
-    \frametitle{The one-hole context of a List}
-    
+\begin{frame}[standout]
+  Computing the One-Hole Context of a List
 \end{frame}
+
 
 
 \begin{frame}[fragile]
@@ -286,4 +294,3 @@ type ComplexInter lane =
 
 
 \end{document}
-    
